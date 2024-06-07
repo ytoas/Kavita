@@ -79,6 +79,7 @@ public class ScannedSeriesResult
 public class SeriesModified
 {
     public required string? FolderPath { get; set; }
+    public required string? LowestFolderPath { get; set; }
     public required string SeriesName { get; set; }
     public DateTime LastScanned { get; set; }
     public MangaFormat Format { get; set; }
@@ -151,6 +152,7 @@ public class ParseScannedFiles
                         HasChanged = false
                     });
                 }
+                
                 else
                 {
                     // For a scan, this is doing everything in the directory loop before the folder Action is called...which leads to no progress indication
@@ -175,25 +177,28 @@ public class ParseScannedFiles
 
         if (HasSeriesFolderNotChangedSinceLastScan(seriesPaths, normalizedPath, forceCheck))
         {
-            result.Add(new ScanResult()
-            {
-                Files = ArraySegment<string>.Empty,
-                Folder = folderPath,
-                LibraryRoot = libraryRoot,
-                HasChanged = false
-            });
+            result.Add(CreateScanResult(folderPath, libraryRoot, false, ArraySegment<string>.Empty));
+        }
+        else
+        {
+            result.Add(CreateScanResult(folderPath, libraryRoot, true,
+                _directoryService.ScanFiles(folderPath, fileExtensions)));
         }
 
-        result.Add(new ScanResult()
-
-        {
-            Files = _directoryService.ScanFiles(folderPath, fileExtensions),
-            Folder = folderPath,
-            LibraryRoot = libraryRoot,
-            HasChanged = true
-        });
 
         return result;
+    }
+
+    private static ScanResult CreateScanResult(string folderPath, string libraryRoot, bool hasChanged,
+        IList<string> files)
+    {
+        return new ScanResult()
+        {
+            Files = files,
+            Folder = folderPath,
+            LibraryRoot = libraryRoot,
+            HasChanged = hasChanged
+        };
     }
 
 
@@ -536,10 +541,26 @@ public class ParseScannedFiles
     {
         if (forceCheck) return false;
 
-        return seriesPaths.ContainsKey(normalizedFolder) && seriesPaths[normalizedFolder].All(f => f.LastScanned.Truncate(TimeSpan.TicksPerSecond) >=
-            _directoryService.GetLastWriteTime(normalizedFolder).Truncate(TimeSpan.TicksPerSecond));
+        if (seriesPaths.TryGetValue(normalizedFolder, out var v))
+        {
+            return HasAllSeriesFolderNotChangedSinceLastScan(v, normalizedFolder);
+        }
+
+        return false;
     }
 
+    private bool HasAllSeriesFolderNotChangedSinceLastScan(IList<SeriesModified> seriesFolders,
+        string normalizedFolder)
+    {
+        return seriesFolders.All(f => HasSeriesFolderNotChangedSinceLastScan(f, normalizedFolder));
+    }
+
+    private bool HasSeriesFolderNotChangedSinceLastScan(SeriesModified seriesModified, string normalizedFolder)
+    {
+        return seriesModified.LastScanned.Truncate(TimeSpan.TicksPerSecond) >=
+               _directoryService.GetLastWriteTime(normalizedFolder)
+                   .Truncate(TimeSpan.TicksPerSecond);
+    }
 
 
 
