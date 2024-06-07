@@ -160,36 +160,20 @@ public class ParseScannedFiles
                     {
                         if (HasSeriesFolderNotChangedSinceLastScan(seriesModified, seriesModified.LowestFolderPath!))
                         {
-                            result.Add(new ScanResult()
-                            {
-                                Files = ArraySegment<string>.Empty,
-                                Folder = directory,
-                                LibraryRoot = folderPath,
-                                HasChanged = false
-                            });
+                            result.Add(CreateScanResult(directory, folderPath, false, ArraySegment<string>.Empty));
                         }
                         else
                         {
-                            result.Add(new ScanResult()
-                            {
-                                Files = _directoryService.ScanFiles(seriesModified.LowestFolderPath!, fileExtensions, matcher),
-                                Folder = directory,
-                                LibraryRoot = folderPath,
-                                HasChanged = true
-                            });
-                        }   
+                            result.Add(CreateScanResult(directory, folderPath, true,
+                                _directoryService.ScanFiles(seriesModified.LowestFolderPath!, fileExtensions, matcher)));
+                        }
                     }
                 }
                 else
                 {
                     // For a scan, this is doing everything in the directory loop before the folder Action is called...which leads to no progress indication
-                    result.Add(new ScanResult()
-                    {
-                        Files = _directoryService.ScanFiles(directory, fileExtensions),
-                        Folder = directory,
-                        LibraryRoot = folderPath,
-                        HasChanged = true
-                    });
+                    result.Add(CreateScanResult(directory, folderPath, true,
+                        _directoryService.ScanFiles(directory, fileExtensions, matcher)));
                 }
             }
 
