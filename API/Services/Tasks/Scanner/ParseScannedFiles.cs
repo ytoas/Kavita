@@ -152,12 +152,42 @@ public class ParseScannedFiles
                         HasChanged = false
                     });
                 }
-                
+                else if (seriesPaths.TryGetValue(normalizedPath, out var series) && series.All(s => !string.IsNullOrEmpty(s.LowestFolderPath)))
+                {
+                    // If there are multiple series inside this path, let's check each of them to see which was modified and only scan those
+                    // This is very helpful for ComicVine libraries by Publisher
+                    foreach (var seriesModified in series)
+                    {
+                        if (HasSeriesFolderNotChangedSinceLastScan(seriesModified, seriesModified.LowestFolderPath!))
+                        {
+                            result.Add(new ScanResult(){
+                                Files = ArraySegment<string>.Empty,
+                                Folder = directory,
+                                LibraryRoot = folderPath,
+                                HasChanged = false
+                            }
+                        }
+                        else
+                        {
+                            result.Add(new ScanResult(){
+                                Files = _directoryService.ScanFiles(seriesModified.LowestFolderPath!, fileExtensions, matcher),
+                                Folder = directory,
+                                LibraryRoot = folderPath,
+                                HasChanged = true
+                            }
+                        }   
+                    }
+                }
                 else
                 {
                     // For a scan, this is doing everything in the directory loop before the folder Action is called...which leads to no progress indication
-                    result.Add(CreateScanResult(directory, folderPath, true,
-                        _directoryService.ScanFiles(directory, fileExtensions)));
+                    result.Add(new ScanResult()
+                    {
+                        Files = _directoryService.ScanFiles(directory, fileExtensions, matcher),
+                        Folder = directory,
+                        LibraryRoot = folderPath,
+                        HasChanged = true
+                    });
                 }
             }
 
