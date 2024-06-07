@@ -185,7 +185,7 @@ public class ParseScannedFiles
                     // For a scan, this is doing everything in the directory loop before the folder Action is called...which leads to no progress indication
                     result.Add(new ScanResult()
                     {
-                        Files = _directoryService.ScanFiles(directory, fileExtensions, matcher),
+                        Files = _directoryService.ScanFiles(directory, fileExtensions),
                         Folder = directory,
                         LibraryRoot = folderPath,
                         HasChanged = true
