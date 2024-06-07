@@ -160,21 +160,23 @@ public class ParseScannedFiles
                     {
                         if (HasSeriesFolderNotChangedSinceLastScan(seriesModified, seriesModified.LowestFolderPath!))
                         {
-                            result.Add(new ScanResult(){
+                            result.Add(new ScanResult()
+                            {
                                 Files = ArraySegment<string>.Empty,
                                 Folder = directory,
                                 LibraryRoot = folderPath,
                                 HasChanged = false
-                            }
+                            });
                         }
                         else
                         {
-                            result.Add(new ScanResult(){
+                            result.Add(new ScanResult()
+                            {
                                 Files = _directoryService.ScanFiles(seriesModified.LowestFolderPath!, fileExtensions, matcher),
                                 Folder = directory,
                                 LibraryRoot = folderPath,
                                 HasChanged = true
-                            }
+                            });
                         }   
                     }
                 }
